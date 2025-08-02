@@ -53,7 +53,7 @@ function renderTabs(data) {
         const cell = row.insertCell();
         if (record) {
           if (record.Estado === 'asistencia') {
-            cell.innerHTML = '✔️';
+            cell.innerHTML = '🟢';
             cell.className = 'flag-green';
             total++;
           } else if (record.Estado === 'falta') {
