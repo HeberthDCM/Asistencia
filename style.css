@@ -1,0 +1,67 @@
+body {
+  font-family: Arial, sans-serif;
+  padding: 20px;
+  background-color: #f0f4f8;
+}
+
+h1 {
+  text-align: center;
+}
+
+.tabs {
+  display: flex;
+  margin-bottom: 10px;
+  gap: 5px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.tabs button {
+  padding: 10px 20px;
+  border: none;
+  background-color: #ddd;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+.tabs button.active {
+  background-color: #4285f4;
+  color: white;
+}
+
+.tab-content > div {
+  display: none;
+}
+
+.tab-content > div.active {
+  display: block;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+  background-color: white;
+}
+
+th, td {
+  border: 1px solid #ccc;
+  padding: 8px;
+  text-align: center;
+}
+
+th {
+  background-color: #f7f7f7;
+}
+
+.flag-green {
+  color: green;
+}
+
+.flag-yellow {
+  color: goldenrod;
+}
+
+.x-green {
+  color: green;
+}
