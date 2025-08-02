@@ -73,6 +73,25 @@ function renderTabs(data) {
       totalCell.textContent = total;
     });
 
+    // Fila de totales por semana
+    const totalRow = table.insertRow();
+    const totalCell = totalRow.insertCell();
+    totalCell.textContent = "Total por semana";
+    totalCell.style.fontWeight = "bold";
+
+    for (let semana = 1; semana <= 5; semana++) {
+      let semanaTotal = cicloData.filter(d =>
+        d.Semana == semana &&
+        (d.Estado === 'asistencia' || d.Estado === 'recuperacion')
+      ).length;
+
+      const cell = totalRow.insertCell();
+      cell.textContent = semanaTotal;
+      cell.style.fontWeight = "bold";
+    }
+
+    totalRow.insertCell(); // celda vacía para columna "Total"
+
     div.appendChild(table);
     content.appendChild(div);
   }
@@ -89,6 +108,8 @@ function renderTabs(data) {
     Array.from({ length: 5 }, (_, i) => `<th>Ciclo ${i + 1}</th>`).join('') +
     `<th>Total General</th>`;
 
+  let cicloSums = [0, 0, 0, 0, 0]; // Para consolidado por ciclo
+
   estudiantes.forEach(est => {
     const row = table.insertRow();
     row.insertCell().textContent = est;
@@ -103,11 +124,30 @@ function renderTabs(data) {
       });
 
       totalGeneral += total;
+      cicloSums[ciclo - 1] += total;
       row.insertCell().textContent = total;
     }
 
     row.insertCell().textContent = totalGeneral;
   });
+
+  // Fila de total por ciclo
+  const totalRow = table.insertRow();
+  const labelCell = totalRow.insertCell();
+  labelCell.textContent = "Total por ciclo";
+  labelCell.style.fontWeight = "bold";
+
+  let totalGeneral = 0;
+  cicloSums.forEach(total => {
+    const cell = totalRow.insertCell();
+    cell.textContent = total;
+    cell.style.fontWeight = "bold";
+    totalGeneral += total;
+  });
+
+  const totalCell = totalRow.insertCell();
+  totalCell.textContent = totalGeneral;
+  totalCell.style.fontWeight = "bold";
 
   divConsolidado.appendChild(table);
   content.appendChild(divConsolidado);
