@@ -4,150 +4,95 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ACADEMIA MATRIMONIOS MENORES</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
-    <!-- Navigation Bar Superior -->
+    <!-- Navigation Bar -->
     <nav class="navbar">
-        <div class="navbar-logo">
-            <i class="fas fa-graduation-cap"></i>
-            <span>ACADEMIA MATRIMONIOS MENORES</span>
+        <div class="navbar-brand">
+            <img src="logo.png" alt="Logo" class="logo">
+            <h1>ACADEMIA MATRIMONIOS MENORES</h1>
         </div>
-        <div class="navbar-buttons">
-            <button id="btnAsistencias" class="nav-btn active">
+        <ul class="nav-menu">
+            <li class="nav-item" data-section="asistencias">
                 <i class="fas fa-clipboard-check"></i> Asistencias
-            </button>
-            <button id="btnPagos" class="nav-btn">
+            </li>
+            <li class="nav-item" data-section="pagos">
                 <i class="fas fa-money-bill-wave"></i> Pagos
-            </button>
-            <button id="btnMenu3" class="nav-btn">
-                <i class="fas fa-calendar-alt"></i> Menú 3
-            </button>
-            <button id="btnMenu4" class="nav-btn">
-                <i class="fas fa-cog"></i> Menú 4
-            </button>
-        </div>
+            </li>
+            <li class="nav-item" data-section="listado">
+                <i class="fas fa-list"></i> Listado
+            </li>
+            <li class="nav-item" data-section="opcion1">
+                <i class="fas fa-cog"></i> Opción 1
+            </li>
+            <li class="nav-item" data-section="opcion2">
+                <i class="fas fa-cog"></i> Opción 2
+            </li>
+        </ul>
     </nav>
 
-    <!-- Contenido Principal -->
+    <!-- Main Content -->
     <div class="main-content">
-        <!-- Barra Lateral (solo para asistencias) -->
-        <div id="sidebar" class="sidebar">
-            <button class="sidebar-btn active" data-ciclo="consolidada">
-                <i class="fas fa-chart-pie"></i> Consolidada
-            </button>
-            <button class="sidebar-btn" data-ciclo="1">
-                <i class="fas fa-hashtag"></i> Ciclo 1
-            </button>
-            <button class="sidebar-btn" data-ciclo="2">
-                <i class="fas fa-hashtag"></i> Ciclo 2
-            </button>
-            <button class="sidebar-btn" data-ciclo="3">
-                <i class="fas fa-hashtag"></i> Ciclo 3
-            </button>
-            <button class="sidebar-btn" data-ciclo="4">
-                <i class="fas fa-hashtag"></i> Ciclo 4
-            </button>
-            <button class="sidebar-btn" data-ciclo="5">
-                <i class="fas fa-hashtag"></i> Ciclo 5
-            </button>
-        </div>
+        <!-- Sidebar (for Asistencias) -->
+        <aside class="sidebar" id="sidebar">
+            <ul class="sidebar-menu">
+                <li class="sidebar-item" data-ciclo="1">Ciclo 1</li>
+                <li class="sidebar-item" data-ciclo="2">Ciclo 2</li>
+                <li class="sidebar-item" data-ciclo="3">Ciclo 3</li>
+                <li class="sidebar-item" data-ciclo="4">Ciclo 4</li>
+                <li class="sidebar-item" data-ciclo="5">Ciclo 5</li>
+                <li class="sidebar-item" data-ciclo="consolidado">Consolidado</li>
+            </ul>
+        </aside>
 
-        <!-- Área de Contenido -->
-        <div id="content-area" class="content-area">
-            <div id="asistencias-content" class="tab-content active">
-                <h1 id="asistencias-title">Asistencias Consolidada</h1>
-                <div id="resumen-asistencias"></div>
-                <div id="tabla-asistencias"></div>
+        <!-- Content Area -->
+        <div class="content-area" id="contentArea">
+            <h1 id="sectionTitle">Bienvenido a la Academia Matrimonios Menores</h1>
+            
+            <!-- Asistencias Content -->
+            <div id="asistenciasContent" class="section-content hidden">
+                <div class="resumen-table-container" id="resumenAsistencias"></div>
+                <div class="detalle-table-container" id="detalleAsistencias"></div>
             </div>
-
-            <div id="pagos-content" class="tab-content">
-                <h1>Pagos</h1>
-                <div id="tabla-pagos"></div>
+            
+            <!-- Pagos Content -->
+            <div id="pagosContent" class="section-content hidden">
+                <div class="resumen-table-container" id="resumenPagos"></div>
+                <div class="detalle-table-container" id="detallePagos"></div>
             </div>
-
-            <div id="menu3-content" class="tab-content">
-                <h1>Menú 3</h1>
-                <p>Contenido del menú 3 estará aquí.</p>
+            
+            <!-- Listado Content -->
+            <div id="listadoContent" class="section-content hidden">
+                <div class="file-selector">
+                    <select id="fileSelector">
+                        <option value="">Seleccione un archivo</option>
+                        <option value="Asistencias">Asistencias</option>
+                        <option value="Pagos">Pagos</option>
+                    </select>
+                    <button id="loadFileBtn">Cargar Archivo</button>
+                </div>
+                <div class="table-container" id="listadoTable"></div>
             </div>
-
-            <div id="menu4-content" class="tab-content">
-                <h1>Menú 4</h1>
-                <p>Contenido del menú 4 estará aquí.</p>
+            
+            <!-- Opción 1 Content -->
+            <div id="opcion1Content" class="section-content hidden">
+                <h1>Opción 1</h1>
+            </div>
+            
+            <!-- Opción 2 Content -->
+            <div id="opcion2Content" class="section-content hidden">
+                <h1>Opción 2</h1>
             </div>
         </div>
     </div>
 
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="main.js"></script>
     <script src="asistencias.js"></script>
     <script src="pagos.js"></script>
-    <script>
-        // Navegación entre pestañas
-        document.getElementById('btnAsistencias').addEventListener('click', function() {
-            showTab('asistencias');
-            document.getElementById('sidebar').style.display = 'block';
-        });
-
-        document.getElementById('btnPagos').addEventListener('click', function() {
-            showTab('pagos');
-            document.getElementById('sidebar').style.display = 'none';
-        });
-
-        document.getElementById('btnMenu3').addEventListener('click', function() {
-            showTab('menu3');
-            document.getElementById('sidebar').style.display = 'none';
-        });
-
-        document.getElementById('btnMenu4').addEventListener('click', function() {
-            showTab('menu4');
-            document.getElementById('sidebar').style.display = 'none';
-        });
-
-        function showTab(tabName) {
-            // Ocultar todos los contenidos
-            document.querySelectorAll('.tab-content').forEach(content => {
-                content.classList.remove('active');
-            });
-
-            // Desactivar todos los botones
-            document.querySelectorAll('.nav-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-
-            // Mostrar el contenido seleccionado
-            document.getElementById(`${tabName}-content`).classList.add('active');
-            
-            // Activar el botón seleccionado
-            document.getElementById(`btn${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`).classList.add('active');
-        }
-
-        // Navegación lateral para asistencias
-        document.querySelectorAll('.sidebar-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                document.querySelectorAll('.sidebar-btn').forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-                const ciclo = this.getAttribute('data-ciclo');
-                
-                if (ciclo === 'consolidada') {
-                    document.getElementById('asistencias-title').textContent = 'Asistencias Consolidada';
-                    // Llamar a función para mostrar asistencias consolidadas
-                    mostrarAsistenciasConsolidadas();
-                } else {
-                    document.getElementById('asistencias-title').textContent = `Asistencias Ciclo ${ciclo}`;
-                    // Llamar a función para mostrar asistencias por ciclo
-                    mostrarAsistenciasPorCiclo(ciclo);
-                }
-            });
-        });
-
-        // Mostrar asistencias consolidadas al cargar
-        document.addEventListener('DOMContentLoaded', function() {
-            // Cargar datos de asistencias
-            cargarDatosAsistencias();
-            
-            // Cargar datos de pagos
-            cargarDatosPagos();
-        });
-    </script>
+    <script src="listado.js"></script>
 </body>
 </html>

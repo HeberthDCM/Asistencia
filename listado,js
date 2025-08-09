@@ -1,0 +1,111 @@
+document.addEventListener('DOMContentLoaded', function() {
+    const loadFileBtn = document.getElementById('loadFileBtn');
+    const fileSelector = document.getElementById('fileSelector');
+    
+    loadFileBtn.addEventListener('click', function() {
+        const selectedFile = fileSelector.value;
+        
+        if (!selectedFile) {
+            showError('Por favor seleccione un archivo', 'listadoTable');
+            return;
+        }
+        
+        loadFile(selectedFile);
+    });
+});
+
+async function loadFile(filename) {
+    try {
+        const container = document.getElementById('listadoTable');
+        container.innerHTML = '<p>Cargando archivo...</p>';
+        
+        // Fetch the Excel file
+        const response = await fetch(`DATA/${filename}.xlsx`);
+        if (!response.ok) {
+            throw new Error('No se pudo cargar el archivo');
+        }
+        
+        const arrayBuffer = await response.arrayBuffer();
+        const data = new Uint8Array(arrayBuffer);
+        const workbook = XLSX.read(data, { type: 'array' });
+        
+        // Get the first sheet
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+        
+        if (jsonData.length === 0) {
+            throw new Error('El archivo está vacío');
+        }
+        
+        // Generate table
+        generateListadoTable(jsonData, filename);
+        
+    } catch (error) {
+        console.error('Error al cargar archivo:', error);
+        showError(`Error al cargar archivo: ${error.message}`, 'listadoTable');
+    }
+}
+
+function generateListadoTable(data, filename) {
+    const container = document.getElementById('listadoTable');
+    
+    if (data.length === 0) {
+        container.innerHTML = '<p>No hay datos para mostrar</p>';
+        return;
+    }
+    
+    // Get all unique keys (columns)
+    const columns = new Set();
+    data.forEach(item => {
+        Object.keys(item).forEach(key => columns.add(key));
+    });
+    
+    let html = `<h2>Listado de ${filename}</h2>`;
+    html += '<table><thead><tr>';
+    
+    // Add headers
+    Array.from(columns).forEach(column => {
+        html += `<th>${column}</th>`;
+    });
+    
+    html += '</tr></thead><tbody>';
+    
+    // Add rows
+    data.forEach(item => {
+        html += '<tr>';
+        
+        Array.from(columns).forEach(column => {
+            const value = item[column] !== undefined ? item[column] : '';
+            
+            // Apply special formatting based on filename and column
+            if (filename === 'Asistencias' && column === 'estado') {
+                if (value === 'asistio') {
+                    html += `<td class="asistio"><i class="fas fa-check"></i> ${value}</td>`;
+                } else if (value === 'recupero') {
+                    html += `<td class="recupero"><i class="fas fa-flag"></i> ${value}</td>`;
+                } else if (value === 'falto') {
+                    html += `<td class="falto"><i class="fas fa-times"></i> ${value}</td>`;
+                } else {
+                    html += `<td>${value}</td>`;
+                }
+            } else if (filename === 'Pagos' && column === 'estado') {
+                if (value === 'pagado') {
+                    html += `<td class="pagado"><i class="fas fa-check"></i> ${value}</td>`;
+                } else if (value === 'pendiente') {
+                    html += `<td class="pendiente"><i class="fas fa-exclamation-circle"></i> ${value}</td>`;
+                } else if (value === 'retirado') {
+                    html += `<td class="retirado"><i class="fas fa-times"></i> ${value}</td>`;
+                } else {
+                    html += `<td>${value}</td>`;
+                }
+            } else {
+                html += `<td>${value}</td>`;
+            }
+        });
+        
+        html += '</tr>';
+    });
+    
+    html += '</tbody></table>';
+    container.innerHTML = html;
+}

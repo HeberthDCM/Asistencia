@@ -1,200 +1,175 @@
-// Configuración de Google Drive API
-const API_KEY = 'AIzaSyDIpQy54Q3Cp7Z54D5d90P1_x5L9OsVmMU'; // Reemplaza con tu API key
-const SPREADSHEET_ID = '1FrHbDkzWdI9azvVQQywSr2j8tB3V6PPF_3YAfXsP6Hg'; // Reemplaza con el ID de tu archivo
-const SHEET_NAME = 'pagos'; // Nombre de la hoja en tu archivo
-
-// Datos de pagos
-let datosPagos = [];
-
-// Función para cargar datos de pagos desde Google Sheets
-async function cargarDatosPagos() {
-    const errorBox = document.getElementById("error");
+async function loadPagosData() {
     try {
-        console.log("Iniciando carga de datos de pagos desde Google Drive...");
-        alert("1 Cargando datos de pagos desde Google Drive...");
-        // Construir la URL para la API de Google Sheets
-        //const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${SHEET_NAME}?key=${API_KEY}`;
-        const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(SHEET_NAME)}?key=${API_KEY}`;
-        // Realizar la solicitud a la API
-        const response = await fetch(url);
-        aler3t("3 solicitudde api...");
+        // Show loading state
+        document.getElementById('resumenPagos').innerHTML = '<p>Cargando datos...</p>';
+        document.getElementById('detallePagos').innerHTML = '<p>Cargando datos...</p>';
+        
+        // Fetch the Excel file
+        const response = await fetch('DATA/Pagos.xlsx');
         if (!response.ok) {
-            throw new Error(`Error HTTP: ${response.status}`);
-        }
-        alert("2 Datos de pagos cargados correctamente desde Google Drive");
-        const data = await response.json();
-        renderizarTabla(data.values); // agregado por mi
-        // Verificar si hay datos
-        if (!data.values || data.values.length === 0) {
-            alert("4 No se encontraron datos en la hoja de cálculo.");
-            throw new Error("No se encontraron datos en la hoja de cálculo");
+            throw new Error('No se pudo cargar el archivo de pagos');
         }
         
-        // Procesar los datos
-        const [headers, ...rows] = data.values;
+        const arrayBuffer = await response.arrayBuffer();
+        const data = new Uint8Array(arrayBuffer);
+        const workbook = XLSX.read(data, { type: 'array' });
         
-        // Validar estructura de datos
-        const expectedHeaders = ['nombre', 'ciclo', 'estado'];
-        if (!expectedHeaders.every(h => headers.includes(h))) {
-            alert("La estructura del archivo no coincide con lo esperado. Asegúrate de que las columnas sean: nombre, ciclo, estado.");
-            throw new Error("La estructura del archivo no coincide con lo esperado");
+        // Get the first sheet
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+        
+        if (jsonData.length === 0) {
+            throw new Error('El archivo de pagos está vacío');
         }
         
-        // Mapear filas a objetos
-        datosPagos = rows.map(row => {
-            // Encontrar índices de las columnas
-            const nombreIndex = headers.indexOf('nombre');
-            const cicloIndex = headers.indexOf('ciclo');
-            const estadoIndex = headers.indexOf('estado');
-            
-            return {
-                nombre: row[nombreIndex],
-                ciclo: row[cicloIndex],
-                estado: row[estadoIndex].toLowerCase()
-            };
-        });
+        // Generate tables
+        generateResumenPagos(jsonData);
+        generateDetallePagos(jsonData);
         
-        console.log("Datos de pagos cargados correctamente desde Google Drive");
-        console.log("Registros cargados:", datosPagos.length);
-        
-        // Mostrar tabla de pagos
-        mostrarTablaPagos();
     } catch (error) {
-        console.error("Error al cargar datos de pagos:", error);
-        
-        let errorMessage = "Error al cargar los datos de pagos. ";
-        
-        if (error.message.includes("404")) {
-            errorMessage += "No se encontró el archivo. Verifica el ID de la hoja de cálculo.";
-        } else if (error.message.includes("403")) {
-            errorMessage += "Problema de autenticación. Verifica tu API key.";
-        } else if (error.message.includes("No se encontraron datos")) {
-            errorMessage += "El archivo está vacío o no tiene los datos esperados.";
-        } else {
-            errorMessage += `Detalles: ${error.message}`;
-        }
-        
-        mostrarErrorPagos(errorMessage);
-        
-        // Mostrar datos de ejemplo como respaldo
-        console.log("Cargando datos de ejemplo como respaldo...");
-        cargarDatosEjemploPagos();
+        console.error('Error al cargar datos de pagos:', error);
+        showError(`Error al cargar datos de pagos: ${error.message}`, 'resumenPagos');
+        showError(`Error al cargar datos de pagos: ${error.message}`, 'detallePagos');
     }
 }
 
-function renderizarTabla(values) {
-    const [headers, ...rows] = values;
-    const thead = document.querySelector("#dataTable thead");
-    const tbody = document.querySelector("#dataTable tbody");
-
-    thead.innerHTML = "<tr>" + headers.map(h => `<th>${h}</th>`).join("") + "</tr>";
-    tbody.innerHTML = rows.map(row => 
-        "<tr>" + headers.map((_, i) => `<td>${row[i] || ""}</td>`).join("") + "</tr>"
-    ).join("");
-}
-
-
-
-// Función para cargar datos de ejemplo (respaldo)
-function cargarDatosEjemploPagos() {
-    datosPagos = [
-        { nombre: "Juan Pérez", ciclo: "1", estado: "pagado" },
-        { nombre: "Juan Pérez", ciclo: "2", estado: "pendiente" },
-        { nombre: "Juan Pérez", ciclo: "3", estado: "sin generar" },
-        { nombre: "Juan Pérez", ciclo: "4", estado: "retirado" },
-        { nombre: "Juan Pérez", ciclo: "5", estado: "sin generar" },
-        { nombre: "María Gómez", ciclo: "1", estado: "pagado" },
-        { nombre: "María Gómez", ciclo: "2", estado: "pagado" },
-        { nombre: "María Gómez", ciclo: "3", estado: "pagado" },
-        { nombre: "María Gómez", ciclo: "4", estado: "pendiente" },
-        { nombre: "María Gómez", ciclo: "5", estado: "sin generar" },
-        { nombre: "Carlos Ruiz", ciclo: "1", estado: "pagado" },
-        { nombre: "Carlos Ruiz", ciclo: "2", estado: "falto" },
-        { nombre: "Carlos Ruiz", ciclo: "3", estado: "retirado" },
-        { nombre: "Carlos Ruiz", ciclo: "4", estado: "retirado" },
-        { nombre: "Carlos Ruiz", ciclo: "5", estado: "retirado" }
-    ];
+function generateResumenPagos(data) {
+    const container = document.getElementById('resumenPagos');
     
-    mostrarTablaPagos();
+    const summaryByCiclo = {};
+    const students = new Set();
+    
+    data.forEach(item => {
+        students.add(item.nombre);
+        
+        if (!summaryByCiclo[item.ciclo]) {
+            summaryByCiclo[item.ciclo] = {
+                total: 0,
+                pagado: 0,
+                pendiente: 0,
+                retirado: 0,
+                sinGenerar: 0
+            };
+        }
+        
+        summaryByCiclo[item.ciclo].total++;
+        
+        switch(item.estado) {
+            case 'pagado':
+                summaryByCiclo[item.ciclo].pagado++;
+                break;
+            case 'pendiente':
+                summaryByCiclo[item.ciclo].pendiente++;
+                break;
+            case 'retirado':
+                summaryByCiclo[item.ciclo].retirado++;
+                break;
+            case 'sin generar':
+                summaryByCiclo[item.ciclo].sinGenerar++;
+                break;
+        }
+    });
+    
+    let html = '<h2>Resumen de Pagos</h2>';
+    html += '<table><thead><tr><th>Ciclo</th><th>Total</th><th>Pagado</th><th>Pendiente</th><th>Retirado</th><th>Sin Generar</th><th>% Pagado</th></tr></thead><tbody>';
+    
+    Object.keys(summaryByCiclo).sort().forEach(ciclo => {
+        const stats = summaryByCiclo[ciclo];
+        const porcentaje = (stats.pagado / (stats.total - stats.sinGenerar)) * 100;
+        
+        html += `<tr>
+            <td>${ciclo}</td>
+            <td>${stats.total}</td>
+            <td>${stats.pagado}</td>
+            <td>${stats.pendiente}</td>
+            <td>${stats.retirado}</td>
+            <td>${stats.sinGenerar}</td>
+            <td>${porcentaje.toFixed(2)}%</td>
+        </tr>`;
+    });
+    
+    html += '</tbody></table>';
+    container.innerHTML = html;
 }
 
-
-// Función para mostrar la tabla de pagos
-function mostrarTablaPagos() {
-    try {
-        const contentArea = document.getElementById('tabla-pagos');
+function generateDetallePagos(data) {
+    const container = document.getElementById('detallePagos');
+    
+    const students = {};
+    const ciclos = [...new Set(data.map(item => item.ciclo))].sort();
+    
+    data.forEach(item => {
+        if (!students[item.nombre]) {
+            students[item.nombre] = {
+                estados: {},
+                pagados: 0
+            };
+        }
+        students[item.nombre].estados[item.ciclo] = item.estado;
         
-        // Obtener lista de estudiantes y ciclos
-        const estudiantes = [...new Set(datosPagos.map(item => item.nombre))];
-        const ciclos = ['1', '2', '3', '4', '5'];
+        // Contar cuotas pagadas
+        if (item.estado === 'pagado') {
+            students[item.nombre].pagados++;
+        }
+    });
+    
+    let html = '<h2>Detalle de Pagos por Estudiante</h2>';
+    html += '<table><thead><tr><th>Estudiante</th>';
+    
+    // Add ciclo headers
+    ciclos.forEach(ciclo => {
+        html += `<th>Ciclo ${ciclo}</th>`;
+    });
+    
+    html += '<th>Cuotas Pagadas</th><th>% Pagado</th></tr></thead><tbody>';
+    
+    // Add student rows
+    Object.keys(students).sort().forEach(nombre => {
+        const studentData = students[nombre];
+        html += `<tr><td>${nombre}</td>`;
         
-        // Generar HTML para la tabla
-        let html = `<table><tr><th>Estudiante</th>`;
+        let totalCiclos = 0;
+        let ciclosValidos = 0;
         
-        // Encabezados de ciclos
         ciclos.forEach(ciclo => {
-            html += `<th>Ciclo ${ciclo}</th>`;
-        });
-        
-        html += `<th>Estado General</th></tr>`;
-        
-        // Filas por estudiante
-        estudiantes.forEach(estudiante => {
-            html += `<tr><td>${estudiante}</td>`;
-            let pagosCompletos = 0;
-            let tienePendientes = false;
-            let retirado = false;
+            const estado = studentData.estados[ciclo];
+            totalCiclos++;
             
-            ciclos.forEach(ciclo => {
-                const registro = datosPagos.find(item => item.nombre === estudiante && item.ciclo === ciclo);
-                
-                if (registro) {
-                    if (registro.estado === 'pagado') {
-                        html += `<td class="pagado">Pagado</td>`;
-                        pagosCompletos++;
-                    } else if (registro.estado === 'pendiente') {
-                        html += `<td class="pendiente">Pendiente</td>`;
-                        tienePendientes = true;
-                    } else if (registro.estado === 'retirado') {
-                        html += `<td class="retirado">Retirado</td>`;
-                        retirado = true;
-                    } else {
-                        html += `<td class="sin-generar">-</td>`;
-                    }
-                } else {
-                    html += `<td class="sin-generar">-</td>`;
-                }
-            });
-            
-            // Determinar estado general
-            let estadoGeneral = '';
-            let estadoClass = '';
-            
-            if (retirado) {
-                estadoGeneral = 'Retirado';
-                estadoClass = 'retirado';
-            } else if (pagosCompletos === ciclos.length) {
-                estadoGeneral = 'Completo';
-                estadoClass = 'pagado';
-            } else if (tienePendientes) {
-                estadoGeneral = 'Pendiente';
-                estadoClass = 'pendiente';
+            if (estado === 'pagado') {
+                html += `<td class="pagado"><i class="fas fa-check"></i> Pagado</td>`;
+                ciclosValidos++;
+            } else if (estado === 'pendiente') {
+                html += `<td class="pendiente"><i class="fas fa-exclamation-circle"></i> Pendiente</td>`;
+                ciclosValidos++;
+            } else if (estado === 'retirado') {
+                html += `<td class="retirado"><i class="fas fa-times"></i> Retirado</td>`;
+            } else if (estado === 'sin generar') {
+                html += '<td class="sin-generar"></td>';
             } else {
-                estadoGeneral = 'Incompleto';
-                estadoClass = 'sin-generar';
+                html += '<td class="sin-generar"></td>';
             }
-            
-            html += `<td class="${estadoClass}">${estadoGeneral}</td></tr>`;
         });
         
-        html += `</table>`;
-        contentArea.innerHTML = html;
-    } catch (error) {
-        console.error("Error al mostrar tabla de pagos:", error);
-        mostrarErrorPagos("Error al generar la tabla de pagos.");
-    }
+        // Calcular porcentaje de pago (excluyendo "sin generar" y "retirado")
+        const porcentajePago = ciclosValidos > 0 ? 
+            (studentData.pagados / ciclosValidos * 100) : 0;
+        
+        // Mostrar cuotas pagadas y porcentaje
+        html += `<td>${studentData.pagados} / 5</td>`;
+        html += `<td>${porcentajePago.toFixed(2)}%</td>`;
+        
+        html += '</tr>';
+    });
+    
+    html += '</tbody></table>';
+    container.innerHTML = html;
 }
 
-// Exportar funciones para uso global
-window.cargarDatosPagos = cargarDatosPagos;
-window.mostrarTablaPagos = mostrarTablaPagos;
+// Load pagos data when the section is shown
+document.addEventListener('DOMContentLoaded', function() {
+    const pagosNavItem = document.querySelector('.nav-item[data-section="pagos"]');
+    
+    pagosNavItem.addEventListener('click', function() {
+        loadPagosData();
+    });
+});
