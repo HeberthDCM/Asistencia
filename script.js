@@ -1,157 +1,153 @@
-window.onload = function () {
-  fetch('asistencias.xlsx')
-    .then(res => res.arrayBuffer())
-    .then(buffer => {
-      const workbook = XLSX.read(buffer, { type: 'array' });
-      const sheetName = workbook.SheetNames[0];
-      const data = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
-      renderTabs(data);
-    });
-};
+const API_KEY = 'AIzaSyDIpQy54Q3Cp7Z54D5d90P1_x5L9OsVmMU';
+const ASISTENCIAS_ID = '1jHc3q5_FBbCD98ShT2mwCXpRL7ayCbORo427zgHKF9Y';
+const PAGOS_ID = '1HVkBsHbQQyd8o0pzkdXq18CVXyuRNutL-AzSmaxPG2Y';
 
-function renderTabs(data) {
-  const tabs = document.getElementById('tabs');
-  const content = document.getElementById('tabContent');
+function showSection(section) {
+  document.getElementById('sidebar').classList.toggle('hidden', section !== 'asistencia');
+  document.getElementById('mainContent').innerHTML = 'Cargando...';
 
-  const tabNames = ['Ciclo 1', 'Ciclo 2', 'Ciclo 3', 'Ciclo 4', 'Ciclo 5', 'Consolidado'];
-
-  tabNames.forEach((name, i) => {
-    const btn = document.createElement('button');
-    btn.textContent = name;
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.tab-content > div').forEach(div => div.classList.remove('active'));
-      document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
-      document.getElementById(`tab${i}`).classList.add('active');
-      btn.classList.add('active');
-    });
-    if (i === 0) btn.classList.add('active');
-    tabs.appendChild(btn);
-  });
-
-  // Ciclos 1 a 5
-  for (let ciclo = 1; ciclo <= 5; ciclo++) {
-    const cicloData = data.filter(d => d.Ciclo == ciclo);
-    const estudiantes = [...new Set(cicloData.map(d => d.Nombre))];
-
-    const div = document.createElement('div');
-    div.id = `tab${ciclo - 1}`;
-    div.className = ciclo === 1 ? 'active' : '';
-
-    const table = document.createElement('table');
-    const header = table.insertRow();
-    header.innerHTML = `<th>Estudiante</th>` +
-      Array.from({ length: 5 }, (_, i) => `<th>Semana ${i + 1}</th>`).join('') +
-      `<th>Total</th>`;
-
-    estudiantes.forEach(est => {
-      const row = table.insertRow();
-      row.insertCell().textContent = est;
-      let total = 0;
-
-      for (let semana = 1; semana <= 5; semana++) {
-        const record = cicloData.find(r => r.Nombre === est && r.Semana == semana);
-        const cell = row.insertCell();
-        if (record) {
-          if (record.Estado === 'asistencia') {
-            cell.innerHTML = '🟢';
-            cell.className = 'flag-green';
-            total++;
-          } else if (record.Estado === 'falta') {
-            cell.innerHTML = '❌';
-            cell.className = 'x-green';
-          } else if (record.Estado === 'recuperacion') {
-            cell.innerHTML = '®️';
-            cell.className = 'flag-yellow';
-            total++;
-          }
-        } else {
-          cell.textContent = '-';
-        }
-      }
-
-      const totalCell = row.insertCell();
-      totalCell.textContent = total;
-    });
-
-    // Fila de totales por semana
-    const totalRow = table.insertRow();
-    const totalCell = totalRow.insertCell();
-    totalCell.textContent = "Total por semana";
-    totalCell.style.fontWeight = "bold";
-
-    for (let semana = 1; semana <= 5; semana++) {
-      let semanaTotal = cicloData.filter(d =>
-        d.Semana == semana &&
-        (d.Estado === 'asistencia' || d.Estado === 'recuperacion')
-      ).length;
-
-      const cell = totalRow.insertCell();
-      cell.textContent = semanaTotal;
-      cell.style.fontWeight = "bold";
-    }
-
-    totalRow.insertCell(); // celda vacía para columna "Total"
-
-    div.appendChild(table);
-    content.appendChild(div);
+  if (section === 'asistencia') {
+    loadCiclos();
+  } else if (section === 'pagos') {
+    loadPagos();
   }
+}
 
-  // Consolidado
-  const divConsolidado = document.createElement('div');
-  divConsolidado.id = 'tab5';
-  divConsolidado.className = '';
+function loadCiclos() {
+  const sidebar = document.getElementById('cicloMenu');
+  sidebar.innerHTML = '';
+  for (let i = 1; i <= 5; i++) {
+    const li = document.createElement('li');
+    li.innerHTML = `<button onclick="loadAsistencia(${i})">Ciclo ${i}</button>`;
+    sidebar.appendChild(li);
+  }
+}
 
-  const estudiantes = [...new Set(data.map(d => d.Nombre))];
-  const table = document.createElement('table');
-  const header = table.insertRow();
-  header.innerHTML = `<th>Estudiante</th>` +
-    Array.from({ length: 5 }, (_, i) => `<th>Ciclo ${i + 1}</th>`).join('') +
-    `<th>Total General</th>`;
+function loadAsistencia(ciclo) {
+  fetchSheet(ASISTENCIAS_ID)
+    .then(data => {
+      const headers = data[0];
+      const registros = data.slice(1).filter(row => row[1] === `Ciclo ${ciclo}`);
+      const estudiantes = {};
 
-  let cicloSums = [0, 0, 0, 0, 0]; // Para consolidado por ciclo
-
-  estudiantes.forEach(est => {
-    const row = table.insertRow();
-    row.insertCell().textContent = est;
-
-    let totalGeneral = 0;
-    for (let ciclo = 1; ciclo <= 5; ciclo++) {
-      const cicloData = data.filter(d => d.Ciclo == ciclo && d.Nombre === est);
-      let total = 0;
-
-      cicloData.forEach(d => {
-        if (d.Estado === 'asistencia' || d.Estado === 'recuperacion') total++;
+      registros.forEach(row => {
+        const [nombre, , semana, estado] = row;
+        if (!estudiantes[nombre]) estudiantes[nombre] = {};
+        estudiantes[nombre][semana] = estado;
       });
 
-      totalGeneral += total;
-      cicloSums[ciclo - 1] += total;
-      row.insertCell().textContent = total;
-    }
+      const semanas = ['Semana 1', 'Semana 2', 'Semana 3', 'Semana 4', 'Examen'];
+      let html = `<h2>Asistencia - Ciclo ${ciclo}</h2><table><tr><th>Nombre</th>`;
 
-    row.insertCell().textContent = totalGeneral;
-  });
+      semanas.forEach(s => html += `<th>${s}</th>`);
+      html += `<th>Total</th></tr>`;
 
-  // Fila de total por ciclo
-  const totalRow = table.insertRow();
-  const labelCell = totalRow.insertCell();
-  labelCell.textContent = "Total por ciclo";
-  labelCell.style.fontWeight = "bold";
+      for (const [nombre, asistencias] of Object.entries(estudiantes)) {
+        let total = 0;
+        html += `<tr><td>${nombre}</td>`;
+        semanas.forEach(sem => {
+          const estado = asistencias[sem] || '';
+          if (estado === 'asistio') {
+            html += `<td class="green">✅</td>`;
+            total++;
+          } else if (estado === 'recupero') {
+            html += `<td class="yellow">⚠️</td>`;
+            total++;
+          } else if (estado === 'falto') {
+            html += `<td class="red">❌</td>`;
+          } else {
+            html += `<td class="blank"></td>`;
+          }
+        });
+        html += `<td>${total}</td></tr>`;
+      }
 
-  let totalGeneral = 0;
-  cicloSums.forEach(total => {
-    const cell = totalRow.insertCell();
-    cell.textContent = total;
-    cell.style.fontWeight = "bold";
-    totalGeneral += total;
-  });
+      html += `</table>`;
+      document.getElementById('mainContent').innerHTML = html;
+    })
+    .catch(error => {
+      document.getElementById('mainContent').innerHTML = `<p style="color:red;">Error al cargar asistencias: ${error.message}</p>`;
+    });
+}
 
-  const totalCell = totalRow.insertCell();
-  totalCell.textContent = totalGeneral;
-  totalCell.style.fontWeight = "bold";
+function mostrarConsolidado() {
+  fetchSheet(ASISTENCIAS_ID)
+    .then(data => {
+      const registros = data.slice(1);
+      const estudiantes = {};
 
-  divConsolidado.appendChild(table);
-  content.appendChild(divConsolidado);
+      registros.forEach(row => {
+        const [nombre, ciclo, , estado] = row;
+        if (!estudiantes[nombre]) estudiantes[nombre] = {};
+        if (!estudiantes[nombre][ciclo]) estudiantes[nombre][ciclo] = 0;
+        if (estado === 'asistio' || estado === 'recupero') estudiantes[nombre][ciclo]++;
+      });
 
-  // Activar primer tab
-  document.querySelector('.tab-content > div').classList.add('active');
+      let html = `<h2>Asistencia Consolidada</h2><table><tr><th>Nombre</th>`;
+      for (let i = 1; i <= 5; i++) html += `<th>Ciclo ${i}</th>`;
+      html += `</tr>`;
+
+      for (const [nombre, ciclos] of Object.entries(estudiantes)) {
+        html += `<tr><td>${nombre}</td>`;
+        for (let i = 1; i <= 5; i++) {
+          html += `<td>${ciclos[`Ciclo ${i}`] || 0}</td>`;
+        }
+        html += `</tr>`;
+      }
+
+      html += `</table>`;
+      document.getElementById('mainContent').innerHTML = html;
+    })
+    .catch(error => {
+      document.getElementById('mainContent').innerHTML = `<p style="color:red;">Error al cargar consolidado: ${error.message}</p>`;
+    });
+}
+
+function loadPagos() {
+  fetchSheet(PAGOS_ID)
+    .then(data => {
+      const registros = data.slice(1);
+      const estudiantes = {};
+
+      registros.forEach(row => {
+        const [nombre, ciclo, estado] = row;
+        if (!estudiantes[nombre]) estudiantes[nombre] = {};
+        estudiantes[nombre][ciclo] = estado;
+      });
+
+      let html = `<h2>Pagos</h2><table><tr><th>Nombre</th>`;
+      for (let i = 1; i <= 5; i++) html += `<th>Ciclo ${i}</th>`;
+      html += `</tr>`;
+
+      for (const [nombre, ciclos] of Object.entries(estudiantes)) {
+        html += `<tr><td>${nombre}</td>`;
+        for (let i = 1; i <= 5; i++) {
+          const estado = ciclos[`Ciclo ${i}`] || '';
+          if (estado === 'pagado') {
+            html += `<td class="green">Pagado</td>`;
+          } else if (estado === 'pendiente') {
+            html += `<td class="yellow">Pendiente</td>`;
+          } else {
+            html += `<td class="blank"></td>`;
+          }
+        }
+        html += `</tr>`;
+      }
+
+      html += `</table>`;
+      document.getElementById('mainContent').innerHTML = html;
+    })
+    .catch(error => {
+      document.getElementById('mainContent').innerHTML = `<p style="color:red;">Error al cargar pagos: ${error.message}</p>`;
+    });
+}
+
+function fetchSheet(sheetId) {
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/A1:Z1000?key=${API_KEY}`;
+  return fetch(url)
+    .then(res => {
+      if (!res.ok) throw new Error('No se pudo conectar con Google Sheets');
+      return res.json();
+    })
+    .then(json => json.values);
 }
