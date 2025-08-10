@@ -20,7 +20,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: linear-gradient(to right, #000000, #333333, #666666);
+    background: linear-gradient(to right, #000000, #333333, #000000);
     color: white;
     padding: 0.5rem 2rem;
     position: sticky;
